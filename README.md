@@ -21,10 +21,16 @@ this is a planning tool, not a scraper.
 
 ## Install
 
-From source:
+`scrape-check` is not on PyPI yet — install it from source, straight from GitHub:
 
 ```bash
 pip install git+https://github.com/python-web-scraping-com/scrape-check.git
+```
+
+Since it's a command-line tool, [`pipx`](https://pipx.pypa.io) is a good way to install it in its own isolated environment:
+
+```bash
+pipx install git+https://github.com/python-web-scraping-com/scrape-check.git
 ```
 
 Requires Python 3.9+.
@@ -111,7 +117,7 @@ Once `scrape-check` tells you what you're dealing with, the
 
 - 🔰 [Complete Guide to Python Web Scraping](https://python-web-scraping.com/the-complete-guide-to-python-web-scraping/) — the fundamentals you'll need for `requests`-friendly sites.
 - 🛡 [Advanced Scraping & Anti-bot Evasion](https://python-web-scraping.com/advanced-scraping-techniques-anti-bot-evasion/) — headless browsers, stealth patching, proxy rotation, and getting past Cloudflare / Akamai.
-- ⚖️ [Legal, Ethical & Compliance](https://python-web-scraping.com/legal-ethical-compliance-in-web-scraping/) — `robots.txt`, GDPR, copyright, and the responsible scraping playbook.
+- ⚙️ [Scaling & Deploying Python Scrapers](https://python-web-scraping.com/scaling-python-web-scrapers/) — Scrapy, async crawling with asyncio/HTTPX, concurrency control, and storing scraped data at scale.
 
 ## Development
 

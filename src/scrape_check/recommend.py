@@ -29,7 +29,7 @@ def build(
     # confirmed disallow makes the polite default "do not scrape".
     if robots.allowed is False:
         reasons.append(f"robots.txt disallows this path (rule: {robots.matched_rule or 'Disallow'})")
-        notes.append("see https://python-web-scraping.com/legal-ethical-compliance-in-web-scraping/")
+        notes.append("respect the disallow, throttle heavily, or seek the site owner's permission")
         return Recommendation(strategy="do-not-scrape", reasons=reasons, notes=notes)
 
     if antibot.challenge_page:
