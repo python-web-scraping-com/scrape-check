@@ -12,7 +12,7 @@ DEFAULT_UA = (
     "AppleWebKit/537.36 (KHTML, like Gecko) "
     "Chrome/124.0.0.0 Safari/537.36"
 )
-SCRAPE_CHECK_UA = "scrape-check/0.1 (+https://github.com/python-web-scraping-com/scrape-check)"
+SCRAPE_CHECK_UA = "scrape-check/0.2 (+https://github.com/python-web-scraping-com/scrape-check)"
 
 
 @dataclass

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from scrape_check.fetch import FetchResult
 from scrape_check.models import AntiBotInfo
 
@@ -12,7 +14,16 @@ _CDN_PRODUCTS = {
     "AWS CloudFront",
     "Sucuri (CDN)",
     "Imperva (CDN)",
+    "Vercel",
+    "Netlify",
+    "Section.io",
+    "StackPath",
 }
+
+# F5 BIG-IP persistence / ASM cookies: BIGipServer<pool> and the TS* family
+# (TS01ab34cd, TSPD_101, …). The TS regex keeps the match tight so ordinary
+# cookies that merely start with "ts" don't trip it.
+_TS_COOKIE_RE = re.compile(r"^ts(pd_|[0-9a-f]{6,})", re.IGNORECASE)
 
 
 def _add(signals: dict[str, list[str]], product: str, evidence: str) -> None:
@@ -74,8 +85,29 @@ def detect(result: FetchResult) -> AntiBotInfo:
         _add(signals, "Imperva (CDN)", "x-iinfo header present")
     if "imperva" in headers.get("x-cdn", "").lower():
         _add(signals, "Imperva (CDN)", f"x-cdn: {headers['x-cdn']}")
-    if any(c.startswith("incap_ses") or c.startswith("visid_incap") for c in cookies):
-        _add(signals, "Imperva (Incapsula)", "incap cookie set")
+    if any(
+        c.startswith("incap_ses") or c.startswith("visid_incap") or c.startswith("nlbi_")
+        for c in cookies
+    ):
+        _add(signals, "Imperva (Incapsula)", "incap/nlbi cookie set")
+
+    # --- Kasada ---
+    if any(h.startswith("x-kpsdk") for h in headers):
+        _add(signals, "Kasada", "x-kpsdk-* header present")
+    if any(c.startswith("kp_uidz") for c in cookies):
+        _add(signals, "Kasada", "KP_UIDz cookie set")
+
+    # --- Queue-it (virtual waiting room) ---
+    if any(c.startswith("queue-it") or c.startswith("queueitaccepted") for c in cookies):
+        _add(signals, "Queue-it", "Queue-it cookie set")
+    if "queue-it.net" in body_lc:
+        _add(signals, "Queue-it", "queue-it.net reference in body")
+
+    # --- AWS WAF ---
+    if any(c.startswith("aws-waf-token") for c in cookies):
+        _add(signals, "AWS WAF", "aws-waf-token cookie set")
+    if "awswaf" in body_lc and ("challenge" in body_lc or "captcha" in body_lc):
+        _add(signals, "AWS WAF", "AWS WAF challenge marker in body")
 
     # --- Sucuri ---
     if "sucuri" in headers.get("server", "").lower():
@@ -86,8 +118,10 @@ def detect(result: FetchResult) -> AntiBotInfo:
         _add(signals, "Sucuri WAF", f"x-sucuri-block: {headers['x-sucuri-block']}")
 
     # --- F5 BIG-IP ---
-    if any(c.startswith("bigipserver") or c.startswith("ts01") for c in cookies):
-        _add(signals, "F5 BIG-IP", "BIG-IP cookie set")
+    if any(c.startswith("bigipserver") for c in cookies) or any(
+        _TS_COOKIE_RE.match(c) for c in cookies
+    ):
+        _add(signals, "F5 BIG-IP", "BIG-IP / TS cookie set")
 
     # --- Fastly ---
     if "x-served-by" in headers and "cache-" in headers["x-served-by"].lower():
@@ -98,6 +132,26 @@ def detect(result: FetchResult) -> AntiBotInfo:
     # --- AWS CloudFront ---
     if "cloudfront" in headers.get("server", "").lower() or "x-amz-cf-id" in headers:
         _add(signals, "AWS CloudFront", "cloudfront header present")
+
+    # --- Vercel (host/CDN) ---
+    if (
+        "vercel" in headers.get("server", "").lower()
+        or "x-vercel-id" in headers
+        or "x-vercel-cache" in headers
+    ):
+        _add(signals, "Vercel", "x-vercel-* / server: Vercel")
+
+    # --- Netlify (host/CDN) ---
+    if "netlify" in headers.get("server", "").lower() or "x-nf-request-id" in headers:
+        _add(signals, "Netlify", "Netlify infrastructure headers")
+
+    # --- Section.io (edge CDN) ---
+    if "section.io" in headers.get("via", "").lower():
+        _add(signals, "Section.io", "via: section.io")
+
+    # --- StackPath / Highwinds (CDN) ---
+    if "stackpath" in headers.get("server", "").lower() or "x-hw" in headers:
+        _add(signals, "StackPath", "StackPath / Highwinds headers")
 
     # --- Captcha widgets in body — strong scraper-blocker signal ---
     if "g-recaptcha" in body_lc or "recaptcha/api.js" in body_lc:

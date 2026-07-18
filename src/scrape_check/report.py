@@ -15,6 +15,57 @@ _STRATEGY_STYLE = {
 }
 
 
+_STRATEGY_COLOR = {
+    "requests": "green",
+    "stealth-headers": "yellow",
+    "headless": "magenta",
+    "do-not-scrape": "red",
+}
+
+
+def render_batch(reports: list[Report], console: Console) -> None:
+    """Render a compact one-row-per-URL summary table for a batch run."""
+    t = Table(title="scrape-check — batch summary", expand=True)
+    t.add_column("URL", overflow="fold")
+    t.add_column("strategy", no_wrap=True)
+    t.add_column("status", justify="right", no_wrap=True)
+    t.add_column("anti-bot", overflow="fold")
+    t.add_column("rendering", no_wrap=True)
+
+    for report in reports:
+        strategy = report.recommendation.strategy
+        style = _STRATEGY_COLOR.get(strategy, "white")
+
+        h = report.http
+        if h.error:
+            status_cell = Text("err", style="red")
+        else:
+            status_style = (
+                "green" if 200 <= h.status < 400 else "yellow" if h.status < 500 else "red"
+            )
+            status_cell = Text(str(h.status), style=status_style)
+
+        a = report.antibot
+        if a.bot_defense:
+            antibot_cell = Text(", ".join(a.bot_defense), style="red")
+        elif a.cdns:
+            antibot_cell = Text(", ".join(a.cdns), style="yellow")
+        else:
+            antibot_cell = Text("—", style="dim")
+
+        t.add_row(
+            report.target,
+            Text(strategy, style=f"bold {style}"),
+            status_cell,
+            antibot_cell,
+            Text(report.rendering.mode, style=_rendering_style(report.rendering.mode)),
+        )
+
+    console.print()
+    console.print(t)
+    console.print()
+
+
 def render(report: Report, console: Console) -> None:
     console.print()
     console.print(_summary_panel(report))

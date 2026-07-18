@@ -4,21 +4,27 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scrape-check"
-version = "0.1.0"
+version = "0.2.0"
 description = "Profile any URL for scrapability: robots.txt, anti-bot stack, rendering mode, and a recommendation."
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.9"
-authors = [{ name = "python-web-scraping.com" }]
+authors = [{ name = "python-web-scraping.com", email = "info@python-web-scraping.com" }]
 keywords = [
     "web-scraping",
     "scraping",
     "python",
     "robots-txt",
     "anti-bot",
+    "bot-detection",
+    "waf",
     "cloudflare",
+    "akamai",
+    "datadome",
+    "cdn-detection",
     "crawler",
     "cli",
+    "batch",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
